@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Games</title>
+  <style>
+    body {
+      background-color: black;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      width: 500px;
+      height: 800px;
+      background: pink;
+      margin: 0 auto;
+      text-align: center;
+    }
+    .title {
+      text-align: center;
+      font-size: 30px;
+      padding: 16px;
+    }
+    .game-window {
+      background: white;
+      width: 300px;
+      height: 500px;
+      margin: 0 auto;
+      position: relative;
+    }
+    .start-btn {
+      width: 200px;
+      height: 50px;
+      background: #2ee66c;
+      border: none;
+      border-radius: 12px;
+      margin-top: 30px;
+      font-size: 20px;
+    }
+    .active-block {
+      height: 20px;
+      width: 20px;
+      background: red;
+      position: absolute;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="title">
+      Tetris
+    </div>
+    <div class="game-window" id="gameWindow"></div>
+    <button class="start-btn" id="startBtn">Start</button>
+  </div>
+</body>
+
+</html>
