@@ -43,9 +43,18 @@
   var BLOCK_SIZE = 20   // 每个小块的大小
   var GAME_WINDOW_WIDTH = 300
   var GAME_WINDOW_HEIGHT = 500
+  // var GAME_WINDOW_WIDTH = 120
+  // var GAME_WINDOW_HEIGHT = 300
 
   var INIT_POS_X = 2
   var INIT_POS_Y = 0
+
+  var column = GAME_WINDOW_WIDTH / BLOCK_SIZE
+  var row = GAME_WINDOW_HEIGHT / BLOCK_SIZE
+  var layout = []
+  for (let i = 0; i < row; i++) {
+    layout[i] = new Array(column).fill(null)
+  }
 
   var currentBlock = null
   var posX = INIT_POS_X
@@ -65,6 +74,7 @@
     random = parseInt(Math.random() * 4)  // 随机值 0 - 3，将块随机旋转一定角度
     block = this.rotateBlock(block, random * 90)
     return block
+    // return BLOCK[0]
   }
 
   /**
@@ -116,9 +126,12 @@
       for (let j = 0; j < row.length; j++) {
         if (row[j] === 1) {
           var blockDiv = document.createElement('div')
+          var px = offsetX + j
+          var py = offsetY + i
           blockDiv.className = ACTIVE_CLASS_NAME
-          blockDiv.style.left = (offsetX + j) * BLOCK_SIZE + 'px'
-          blockDiv.style.top = (offsetY + i) * BLOCK_SIZE + 'px'
+          blockDiv.style.left = px * BLOCK_SIZE + 'px'
+          blockDiv.style.top = py * BLOCK_SIZE + 'px'
+          blockDiv.pos = {x: px, y: py}
           gameWindow.appendChild(blockDiv)
           this.blockDom.push(blockDiv)
         }
@@ -170,7 +183,38 @@
     if ((this.posY + this.block.length) * BLOCK_SIZE < GAME_WINDOW_HEIGHT) {// 下边界
       this.posY++
       this.render(this.posX, this.posY)
+    } else {
+      console.log('到底')
+      this.blockDom.forEach(function (blockDiv) {
+        blockDiv.className = 'inactive-block'
+        layout[blockDiv.pos.y][blockDiv.pos.x] = blockDiv
+      })
+      // 方块消除
+      layout.forEach(function(rows) {
+        var canDelete = true
+        rows.forEach(function(item) {
+          if (!item) {
+            canDelete = false
+          }
+        })
+        if (canDelete) {
+        console.log(layout)
+          rows.forEach(function (item) {
+            item.parentNode.removeChild(item)
+            layout[item.pos.y][item.pos.x] = null
+          })
+        console.log(layout)
+        }
+      })
+
+      // 创建新方块
+      blockFactory()
     }
+  }
+
+  // 是否碰撞已经存在的方块
+  Block.prototype.isHitBlock = function(block) {
+    
   }
 
   // 边界检查，是否碰壁
@@ -192,12 +236,16 @@
       currentBlock.move(event.key)
     })
 
-    currentBlock = new Block()
-    currentBlock.render(posX, posY)
+    blockFactory()
 
     document.getElementById('startBtn').onclick = function() {
       console.log('start game')
     }
+  }
+
+  function blockFactory() {
+    currentBlock = new Block()
+    currentBlock.render(posX, posY)
   }
 
   // 设置游戏框大小
