@@ -41,19 +41,19 @@
 
   var ACTIVE_CLASS_NAME = 'active-block'  // 可移动方块的 class 名字
   var BLOCK_SIZE = 20   // 每个小块的大小
-  var GAME_WINDOW_WIDTH = 300
-  var GAME_WINDOW_HEIGHT = 500
-  // var GAME_WINDOW_WIDTH = 120
-  // var GAME_WINDOW_HEIGHT = 300
+  // var GAME_WINDOW_WIDTH = 300
+  // var GAME_WINDOW_HEIGHT = 500
+  var GAME_WINDOW_WIDTH = 120
+  var GAME_WINDOW_HEIGHT = 300
 
   var INIT_POS_X = 2
   var INIT_POS_Y = 0
 
-  var column = GAME_WINDOW_WIDTH / BLOCK_SIZE
-  var row = GAME_WINDOW_HEIGHT / BLOCK_SIZE
-  var layout = []
-  for (let i = 0; i < row; i++) {
-    layout[i] = new Array(column).fill(null)
+  var COLUMN = GAME_WINDOW_WIDTH / BLOCK_SIZE
+  var ROW = GAME_WINDOW_HEIGHT / BLOCK_SIZE
+  var grid = []
+  for (let i = 0; i < ROW; i++) {
+    grid[i] = new Array(COLUMN).fill(null)
   }
 
   var currentBlock = null
@@ -74,7 +74,6 @@
     random = parseInt(Math.random() * 4)  // 随机值 0 - 3，将块随机旋转一定角度
     block = this.rotateBlock(block, random * 90)
     return block
-    // return BLOCK[0]
   }
 
   /**
@@ -148,23 +147,24 @@
       case Right:
         this.moveRight()
         break
+      case Down:
+        this.moveDown()
+        break
       case UP:
         var newBlock = this.rotateBlock(this.block, 90)
-        if (!this.isCollision(newBlock)) {
+        if (!this.isCollision(newBlock) && !this.isHitBlock(newBlock, {x: this.posX, y: this.posY})) {
           this.block = newBlock
           this.render(this.posX, this.posY)
         }
         break
-      case Down:
-        this.moveDown()
-        break
     }
-    // this.render(this.posX, this.posY)
   }
 
   // 左移
   Block.prototype.moveLeft = function() {
-    if (this.posX - 1 >= 0) {
+    if (this.posX - 1 >= 0 &&
+      !this.isHitBlock(this.block, {x: this.posX-1, y: this.posY})
+      ) {
       this.posX--
       this.render(this.posX, this.posY)
     }
@@ -172,7 +172,9 @@
 
   // 右移
   Block.prototype.moveRight = function() {
-    if ((this.posX + this.block[0].length) * BLOCK_SIZE < GAME_WINDOW_WIDTH) { // 右边界
+    if ((this.posX + this.block[0].length) * BLOCK_SIZE < GAME_WINDOW_WIDTH &&  // 右边界
+      !this.isHitBlock(this.block, {x: this.posX+1, y: this.posY})
+    ) { 
       this.posX++
       this.render(this.posX, this.posY)
     }
@@ -180,32 +182,19 @@
 
   // 下移
   Block.prototype.moveDown = function() {
-    if ((this.posY + this.block.length) * BLOCK_SIZE < GAME_WINDOW_HEIGHT) {// 下边界
+    if ((this.posY + this.block.length) * BLOCK_SIZE < GAME_WINDOW_HEIGHT && // 下边界
+      !this.isHitBlock(this.block, {x: this.posX, y: this.posY+1})
+    ) {
       this.posY++
       this.render(this.posX, this.posY)
     } else {
       console.log('到底')
       this.blockDom.forEach(function (blockDiv) {
         blockDiv.className = 'inactive-block'
-        layout[blockDiv.pos.y][blockDiv.pos.x] = blockDiv
+        grid[blockDiv.pos.y][blockDiv.pos.x] = blockDiv
       })
-      // 方块消除
-      layout.forEach(function(rows) {
-        var canDelete = true
-        rows.forEach(function(item) {
-          if (!item) {
-            canDelete = false
-          }
-        })
-        if (canDelete) {
-        console.log(layout)
-          rows.forEach(function (item) {
-            item.parentNode.removeChild(item)
-            layout[item.pos.y][item.pos.x] = null
-          })
-        console.log(layout)
-        }
-      })
+
+      sweepBlock()
 
       // 创建新方块
       blockFactory()
@@ -213,8 +202,16 @@
   }
 
   // 是否碰撞已经存在的方块
-  Block.prototype.isHitBlock = function(block) {
-    
+  Block.prototype.isHitBlock = function(block, pos) {
+    let hit = false
+    block.forEach(function (row, rowIndex) {
+      row.forEach(function (column, columnIndex) {
+        if (column === 1 && grid[pos.y + rowIndex][pos.x + columnIndex]) {
+          hit = true
+        }
+      })
+    })
+    return hit
   }
 
   // 边界检查，是否碰壁
@@ -253,6 +250,40 @@
     var gameWindow = document.getElementById('gameWindow')
     gameWindow.style.width = width + 'px'
     gameWindow.style.height = height + 'px'
+  }
+
+  function sweepBlock() {
+    // 方块消除
+    grid.forEach(function(rows) {
+      var canDelete = true
+      rows.forEach(function(item) {
+        if (!item) {
+          canDelete = false
+        }
+      })
+      if (canDelete) {
+        let posY = rows[0].pos.y
+        rows.forEach(function (item) {
+          item.parentNode.removeChild(item)
+          grid[item.pos.y][item.pos.x] = null
+        })
+        fall(posY)
+        console.log(grid)
+      }
+    })
+  }
+
+  function fall(posY) {
+    for (let i = posY - 1; i >= 0; i--) {
+      grid[i].forEach(function (item) {
+        if (item) {
+          item.pos.y++
+          item.style.top = item.pos.y * BLOCK_SIZE + 'px'
+        }
+      })
+      grid[i + 1] = grid[i]
+    }
+    grid[0] = new Array(COLUMN).fill(null)
   }
 
 })()
