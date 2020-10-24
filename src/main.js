@@ -51,14 +51,98 @@
 
   var COLUMN = GAME_WINDOW_WIDTH / BLOCK_SIZE
   var ROW = GAME_WINDOW_HEIGHT / BLOCK_SIZE
-  var grid = []
-  for (let i = 0; i < ROW; i++) {
-    grid[i] = new Array(COLUMN).fill(null)
-  }
 
   var currentBlock = null
-  var posX = INIT_POS_X
-  var posY = INIT_POS_Y
+  var grid = []  // grid，用于记录已下落方块的 DOM 对象
+
+
+  window.onload = function() {
+    initGame()
+  };
+
+  function initGame() {
+    setGameWindowSize(GAME_WINDOW_WIDTH, GAME_WINDOW_HEIGHT)
+
+    grid = initGrid(ROW, COLUMN)
+
+    currentBlock = blockFactory()
+
+    // 添加键盘监听器，控制方块的移动与变换
+    window.addEventListener('keydown', function(event) {
+      currentBlock.move(event.key)
+    })
+
+    document.getElementById('startBtn').onclick = function() {
+      console.log('start game')
+    }
+  }
+
+  function clear(grid) {
+    grid.forEach(function (rows, rowIndex) {
+      rows && rows.forEach(function (column, columnIndex) {
+        if (column) {
+          column.parentNode.removeChild(column)
+          grid[rowIndex][columnIndex] = null
+        }
+      })
+    })
+  }
+
+  // 新建一个方块
+  function blockFactory() {
+    var block = new Block()
+    block.render(block.posX, block.posY)
+    return block
+  }
+
+  // 设置游戏框大小
+  function setGameWindowSize(width, height) {
+    var gameWindow = document.getElementById('gameWindow')
+    gameWindow.style.width = width + 'px'
+    gameWindow.style.height = height + 'px'
+  }
+
+  // 方块消除
+  function eraseBlock() {
+    grid.forEach(function(rows) {
+      var canDelete = true
+      rows.forEach(function(item) {
+        if (!item) {
+          canDelete = false
+        }
+      })
+      if (canDelete) {
+        let posY = rows[0].pos.y
+        rows.forEach(function (item) {
+          item.parentNode.removeChild(item)
+          grid[item.pos.y][item.pos.x] = null
+        })
+        autoFall(posY)
+      }
+    })
+  }
+
+  // 清除满行方块后，上面的方块自动下落
+  function autoFall(posY) {
+    for (let i = posY - 1; i >= 0; i--) {
+      grid[i].forEach(function (item) {
+        if (item) {
+          item.pos.y++
+          item.style.top = item.pos.y * BLOCK_SIZE + 'px'
+        }
+      })
+      grid[i + 1] = grid[i]
+    }
+    grid[0] = new Array(COLUMN).fill(null)
+  }
+
+  function initGrid(row, column) {
+    var gridArr = []
+    for (let i = 0; i < row; i++) {
+      gridArr[i] = new Array(column).fill(null)
+    }
+    return gridArr
+  }
 
   function Block() {
     this.posX = INIT_POS_X
@@ -194,10 +278,20 @@
         grid[blockDiv.pos.y][blockDiv.pos.x] = blockDiv
       })
 
-      sweepBlock()
+      eraseBlock()
 
-      // 创建新方块
-      blockFactory()
+      setTimeout(() => {
+        // 创建新方块
+        currentBlock = blockFactory()
+
+        if (currentBlock.isHitBlock(currentBlock.block, {x: currentBlock.posX, y: currentBlock.posY})) {
+          alert('game over')
+          
+          // 清空游戏中所有方块
+          clear(grid)
+        }
+      }, 0)
+
     }
   }
 
@@ -219,71 +313,6 @@
     return this.posX < 0  ||  // 左边界
         (this.posX + block[0].length) * BLOCK_SIZE > GAME_WINDOW_WIDTH ||  // 右边界
         (this.posY + block.length) * BLOCK_SIZE > GAME_WINDOW_HEIGHT // 下边界
-  }
-
-  window.onload = function() {
-    init()
-  };
-
-  function init() {
-    setGameWindowSize(GAME_WINDOW_WIDTH, GAME_WINDOW_HEIGHT)
-
-    // 添加键盘监听器
-    window.addEventListener('keydown', function(event) {
-      currentBlock.move(event.key)
-    })
-
-    blockFactory()
-
-    document.getElementById('startBtn').onclick = function() {
-      console.log('start game')
-    }
-  }
-
-  function blockFactory() {
-    currentBlock = new Block()
-    currentBlock.render(posX, posY)
-  }
-
-  // 设置游戏框大小
-  function setGameWindowSize(width, height) {
-    var gameWindow = document.getElementById('gameWindow')
-    gameWindow.style.width = width + 'px'
-    gameWindow.style.height = height + 'px'
-  }
-
-  function sweepBlock() {
-    // 方块消除
-    grid.forEach(function(rows) {
-      var canDelete = true
-      rows.forEach(function(item) {
-        if (!item) {
-          canDelete = false
-        }
-      })
-      if (canDelete) {
-        let posY = rows[0].pos.y
-        rows.forEach(function (item) {
-          item.parentNode.removeChild(item)
-          grid[item.pos.y][item.pos.x] = null
-        })
-        fall(posY)
-        console.log(grid)
-      }
-    })
-  }
-
-  function fall(posY) {
-    for (let i = posY - 1; i >= 0; i--) {
-      grid[i].forEach(function (item) {
-        if (item) {
-          item.pos.y++
-          item.style.top = item.pos.y * BLOCK_SIZE + 'px'
-        }
-      })
-      grid[i + 1] = grid[i]
-    }
-    grid[0] = new Array(COLUMN).fill(null)
   }
 
 })()
